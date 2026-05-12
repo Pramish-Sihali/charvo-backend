@@ -1,0 +1,54 @@
+{
+  "family": "charcoalx-backend",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "256",
+  "memory": "512",
+  "executionRoleArn": "arn:aws:iam::__AWS_ACCOUNT_ID__:role/LabRole",
+  "taskRoleArn": "arn:aws:iam::__AWS_ACCOUNT_ID__:role/LabRole",
+  "runtimePlatform": {
+    "cpuArchitecture": "X86_64",
+    "operatingSystemFamily": "LINUX"
+  },
+  "containerDefinitions": [
+    {
+      "name": "charcoalx-backend",
+      "image": "__ECR_IMAGE_URI__",
+      "essential": true,
+      "portMappings": [
+        {
+          "containerPort": 8000,
+          "hostPort": 8000,
+          "protocol": "tcp"
+        }
+      ],
+      "environment": [
+        { "name": "JWT_ALGORITHM", "value": "HS256" },
+        { "name": "JWT_EXPIRE_MINUTES", "value": "60" },
+        { "name": "PORT", "value": "8000" },
+        { "name": "ALLOWED_ORIGINS", "value": "__ALLOWED_ORIGINS__" },
+        { "name": "DATABASE_URL", "value": "__DATABASE_URL__" },
+        { "name": "JWT_SECRET", "value": "__JWT_SECRET__" }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/charcoalx",
+          "awslogs-region": "us-east-1",
+          "awslogs-stream-prefix": "ecs",
+          "awslogs-create-group": "true"
+        }
+      },
+      "healthCheck": {
+        "command": [
+          "CMD-SHELL",
+          "python -c \"import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8000/health', timeout=3).status==200 else 1)\" || exit 1"
+        ],
+        "interval": 30,
+        "timeout": 5,
+        "retries": 3,
+        "startPeriod": 10
+      }
+    }
+  ]
+}

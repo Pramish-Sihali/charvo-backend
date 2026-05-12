@@ -1,0 +1,79 @@
+name: Deploy backend to ECS Fargate
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'app/**'
+      - 'Dockerfile'
+      - 'requirements.txt'
+      - 'infra/task-definition.json'
+      - '.github/workflows/deploy.yml'
+  workflow_dispatch:
+
+env:
+  AWS_REGION: us-east-1
+  ECR_REPO: charcoalx-backend
+  ECS_CLUSTER: charcoalx
+  ECS_SERVICE: charcoalx-backend
+  CONTAINER: charcoalx-backend
+  TASK_DEF: infra/task-definition.json
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # AWS Educate Learner Lab does NOT allow creating IAM roles, so we can't
+      # use OIDC role assumption. Store the lab's temporary credentials as
+      # repo secrets and re-rotate them when the 4-hour session expires:
+      #   gh secret set AWS_ACCESS_KEY_ID
+      #   gh secret set AWS_SECRET_ACCESS_KEY
+      #   gh secret set AWS_SESSION_TOKEN
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: ecr-login
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build, tag, and push image to ECR
+        id: build-image
+        env:
+          REGISTRY: ${{ steps.ecr-login.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          IMAGE_URI="$REGISTRY/$ECR_REPO:$IMAGE_TAG"
+          docker build -t "$IMAGE_URI" -t "$REGISTRY/$ECR_REPO:latest" .
+          docker push "$IMAGE_URI"
+          docker push "$REGISTRY/$ECR_REPO:latest"
+          echo "image=$IMAGE_URI" >> "$GITHUB_OUTPUT"
+
+      - name: Render task definition
+        id: render
+        run: |
+          ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+          sed -e "s|__AWS_ACCOUNT_ID__|$ACCOUNT_ID|g" \
+              -e "s|__ECR_IMAGE_URI__|${{ steps.build-image.outputs.image }}|g" \
+              -e "s|__DATABASE_URL__|${{ secrets.DATABASE_URL }}|g" \
+              -e "s|__JWT_SECRET__|${{ secrets.JWT_SECRET }}|g" \
+              -e "s|__ALLOWED_ORIGINS__|${{ secrets.ALLOWED_ORIGINS }}|g" \
+              "$TASK_DEF" > /tmp/task-def.rendered.json
+          echo "file=/tmp/task-def.rendered.json" >> "$GITHUB_OUTPUT"
+
+      - name: Deploy to ECS
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
+        with:
+          task-definition: ${{ steps.render.outputs.file }}
+          cluster: ${{ env.ECS_CLUSTER }}
+          service: ${{ env.ECS_SERVICE }}
+          wait-for-service-stability: true

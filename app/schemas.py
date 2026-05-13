@@ -14,7 +14,7 @@ class UserPublic(BaseModel):
 
 class RegisterIn(BaseModel):
     email: EmailStr
-    password: str = Field(min_length=6, max_length=128)
+    password: str = Field(min_length=8, max_length=128)
     full_name: str | None = None
 
 

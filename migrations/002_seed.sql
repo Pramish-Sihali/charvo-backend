@@ -1,32 +1,42 @@
--- CharcoalX seed data. Honest, factual product copy. No medical claims.
+-- CharcoalX seed data. Matches the frontend catalog (lib/catalog.ts) exactly.
 -- Activated carbon filters adsorb tar and particulate; this is harm reduction, not "safe smoking".
+
+delete from orders;
+delete from products;
 
 insert into products (name, description, price_cents, stock, image_url) values
 (
-    'CharcoalX Single Pack (10 filters)',
-    'Slim 6mm activated carbon filter tips. Fits standard rolling papers and American Spirit cigarettes. Adsorbs tar and particulate for a cleaner draw. Single-use.',
-    999,
+    'Classic Black',
+    'Matte black activated charcoal tips, 20 per pack. Fits American Spirit and hand-rolled tobacco. The filter that started it all.',
+    1299,
     200,
-    'https://placehold.co/600x400?text=CharcoalX+Single+Pack'
+    '/images/image (7).png'
 ),
 (
-    'CharcoalX Value Pack (50 filters)',
-    'Same 6mm activated carbon filter, in a 50-pack. Better per-filter price for regular smokers. Cleaner draw, no flavor additives.',
-    3999,
-    100,
-    'https://placehold.co/600x400?text=CharcoalX+Value+Pack'
+    'Natural',
+    'Same activated carbon core, unbleached rice paper exterior. Cream finish for those who prefer a lighter aesthetic alongside their rolling papers.',
+    1299,
+    200,
+    '/images/image (3).png'
 ),
 (
-    'CharcoalX Pro Pack (200 filters)',
-    'Bulk 200-pack for daily smokers. Slim 6mm activated carbon filter, fits standard rolling papers and American Spirit cigarettes. Resealable pouch.',
-    12999,
-    40,
-    'https://placehold.co/600x400?text=CharcoalX+Pro+Pack'
+    'Trio Sample',
+    'Three filters before you commit to a full pack. Keep two, give one away. Comes in both Classic Black and Natural variants.',
+    299,
+    500,
+    '/images/image (8).png'
 ),
 (
-    'CharcoalX Starter Kit',
-    '10 single-use activated carbon filters plus a reusable holder/mouthpiece. Holder is dishwasher-safe; filters drop in and snap out.',
-    2499,
-    80,
-    'https://placehold.co/600x400?text=CharcoalX+Starter+Kit'
+    'Hemp Rolling Papers',
+    'Slow-burning, unbleached hemp. 50 leaves per booklet, king size. No chalk, no additives. Pairs with any Charvo filter for a complete roll.',
+    499,
+    300,
+    '/images/image (5).png'
+),
+(
+    'Complete Rolling Kit',
+    'Filters, hemp papers, herb grinder, rolling tray, and a storage vial — everything in a waxed canvas carry pouch. One purchase, nothing left to buy.',
+    3499,
+    50,
+    '/images/image (4).png'
 );
